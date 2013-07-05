@@ -1,6 +1,5 @@
 segment .data
-        hello   db      "Pointer arithmetic is great!", 0
-        newline db      0xA
+        test_str   db      "I do not know how long this string is, and that is an okay thing.", 0
 
 segment .text
         extern print_nl
