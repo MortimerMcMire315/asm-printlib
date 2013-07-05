@@ -1,3 +1,7 @@
+segment .data
+        nl      db      0xA
+        nl_len  equ     $-nl
+        
 segment .bss
     to_print:   resb 1
     data_save:  resd 1
@@ -7,6 +11,7 @@ segment .text
         global print_char_from_val
         global print_char_from_ptr
         global print_signed_int_val
+        global print_nl
 
 print_char_from_val:
         push    dword ebx
@@ -25,6 +30,27 @@ print_char_from_val:
         pop     edx
         pop     ecx
         pop     ebx
+        
+        ret
+        
+print_nl:
+        push    dword eax
+        push    dword ebx
+        push    dword ecx
+        push    dword edx
+        
+        mov     eax, 4
+        mov     ebx, 1
+        mov     ecx, nl
+        mov     edx, nl_len
+        int     0x80
+
+        pop     edx
+        pop     ecx
+        pop     ebx
+        pop     eax
+
+        ret
         
 ;PRE: An ASCII character pointer will be given in eax
 ;POST: The character will be printed to stdout.

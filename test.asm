@@ -12,7 +12,7 @@ segment .text
 main:
         enter   0,0
         
-        mov     eax, -5235
+        mov     eax, -5234
         
         call    print_signed_int_val
         call    print_nl

@@ -1,6 +1,5 @@
 #!/bin/bash
 nasm -f elf32 print_eax_val.asm
 nasm -f elf32 test.asm
-nasm -f elf32 print_nl.asm
-gcc -m32 -O3 -o test print_eax_val.o print_nl.o test.o
+gcc -m32 -O3 -o test print_eax_val.o test.o
 ./test
