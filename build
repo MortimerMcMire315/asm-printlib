@@ -1,5 +1,5 @@
 #!/bin/bash
-nasm -f elf32 print_eax_val.asm
+nasm -f elf32 print_routines.asm
 nasm -f elf32 main.asm
-gcc -m32 -O3 -o main print_eax_val.o main.o
+gcc -m32 -O3 -o main print_routines.o main.o
 ./main
