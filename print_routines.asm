@@ -101,12 +101,13 @@ print_signed_int_val:
                 mov     eax, 45     ;...
                 call    print_char_from_val
                 mov     eax, ebx
+                neg     eax
                 
   realbegin:    mov     ecx, 0      ;ecx will be our counter
                 mov     ebx, 10     ;keep dividing by 10
 
     divloop:    cdq                 ;extend eax into edx.
-                idiv    ebx         ;signed division... quotient goes
+                div    ebx         ;signed division... quotient goes
                                     ;into eax, remainder goes into edx.
                 push    dword edx   ;push the decimal LSD (heh) onto the stack
                 add     ecx, 1      ;increment ecx
@@ -114,11 +115,6 @@ print_signed_int_val:
                 jne     divloop
                 
     prntloop:   pop     eax         ;pop the LSD into eax
-                cmp     eax, 0      ;if the digit is positive, goto pos
-                jge     pos         
-                                    ;else...
-                                    ;we have a negative int. so
-                neg     eax         ;negate it.
                 
          pos:   add     eax, 48     ;add 48 so we can ASCII
                 call    print_char_from_val

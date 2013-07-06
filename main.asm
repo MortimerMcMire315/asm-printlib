@@ -6,12 +6,13 @@ segment .text
         extern print_string
         extern print_char_from_val
         extern print_signed_int_val
+        extern print_n_fib_nums
         global main
 
 main:
         enter   0,0
         
-        mov     eax, -5234
+        mov     eax, -124578
         
         call    print_signed_int_val
         call    print_nl
