@@ -1,4 +1,3 @@
-
 segment .data
         nl:      db      0xA
         nl_len:  equ     $-nl
@@ -21,10 +20,7 @@ segment .text
         global dump_regs
 
 print_char_from_val:
-            push    dword ebx
-            push    dword ecx
-            push    dword edx
-            push    dword eax
+            pusha
 
             mov     [to_print], eax
             mov     eax, 4
@@ -33,29 +29,20 @@ print_char_from_val:
             mov     edx, 1
             int     0x80
 
-            pop     eax
-            pop     edx
-            pop     ecx
-            pop     ebx
+            popa
             
             ret
             
 print_nl:
-            push    dword eax
-            push    dword ebx
-            push    dword ecx
-            push    dword edx
-            
+            pusha           
+           
             mov     eax, 4
             mov     ebx, 1
             mov     ecx, nl
             mov     edx, nl_len
             int     0x80
 
-            pop     edx
-            pop     ecx
-            pop     ebx
-            pop     eax
+            popa
 
             ret
             
@@ -63,9 +50,7 @@ print_nl:
     ;POST: The character will be printed to stdout.
     
 print_char_from_ptr:
-            push    dword ebx
-            push    dword ecx
-            push    dword edx
+            pusha
 
             ;eax is an int*
             mov     ecx, eax    ;ecx = eax
@@ -75,9 +60,8 @@ print_char_from_ptr:
             int     0x80        ;kernel, please?
 
             mov     eax, ecx    ;eax = ecx
-            pop     edx         ;restore everything we saved on the stack
-            pop     ecx
-            pop     ebx
+
+            popa
 
             ret                 ;return
             
@@ -100,11 +84,8 @@ print_string:
                 ret                 ;return
 
 print_signed_dec_int:
-                push    dword edx
-                push    dword ecx
-                push    dword ebx
-                push    dword eax
-                
+                pusha
+               
                 cmp     eax, 0      ;if eax > 0:
                 jge     realbegin   ;goto realbegin. else:
                 mov     ebx, eax    ;print me a '-'...
@@ -132,18 +113,12 @@ print_signed_dec_int:
                 cmp     ecx, 0      ;check if ecx = 0
                 jne     prntloop
                 
-                pop     eax
-                pop     ebx
-                pop     ecx
-                pop     edx
+                popa
 
                 ret
 
 print_unsigned_bin_int:
-                push    dword eax
-                push    dword ebx
-                push    dword ecx
-                push    dword edx
+                pusha
                 mov     ebx, 31
                 
   binprntloop:  rol     eax, 1
@@ -176,45 +151,34 @@ print_unsigned_bin_int:
                 cmp     ebx,0
                 jge     binprntloop
 
-                pop     edx
-                pop     ecx
-                pop     ebx
-                pop     eax
-
+                popa
+                
                 ret
 
 dump_regs:
-                push    eax
+                pusha
+                push    dword eax
+                push    dword ebx
+                push    dword ecx
+                push    dword edx
                 
-                push    eax
                 mov     eax,reg_a
+                sub     eax,6
+                mov     ecx,4
+
+    regdump:
+                add     eax,6
                 call    print_string
+                mov     ebx,eax
                 pop     eax
                 call    print_unsigned_bin_int
-
-                call    print_nl
-                
-                mov     eax,reg_b
-                call    print_string
                 mov     eax,ebx
-                call    print_unsigned_bin_int
 
                 call    print_nl
 
-                mov     eax,reg_c
-                call    print_string
-                mov     eax,ecx
-                call    print_unsigned_bin_int
-                
-                call    print_nl
-
-                mov     eax,reg_a
-                call    print_string
-                mov     eax,edx
-                call    print_unsigned_bin_int
-                
-                call    print_nl
-
-                pop     eax
-                
+                dec     ecx
+                cmp     ecx,0
+                jg      regdump
+               
+                popa
                 ret
