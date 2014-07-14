@@ -1,0 +1,5 @@
+nasm -f elf32 main.asm
+nasm -f elf32 print_routines.asm
+nasm -f elf32 str_routines.asm
+gcc -m32 -march=i386 -o main main.o print_routines.o str_routines.o
+rm *.o
