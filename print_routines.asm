@@ -73,11 +73,11 @@ print_string:
                 push    dword eax
                 push    dword ebx   ;save whatever is in ebx
 
-        l1:     call    print_char_from_ptr  ;cout<<*eax;
+       .l1:     call    print_char_from_ptr  ;cout<<*eax;
                 add     eax, 1       ;eax++
                 mov     bl, [eax]   ;ebx = eax
                 cmp     bl, 0       ;if (ebx != 0) {  //Strings are null-terminated!
-                jne     l1          ;   goto label
+                jne     .l1          ;   goto label
                                     ;}
                 pop     ebx         ;restore ebx
                 pop     eax
@@ -88,31 +88,31 @@ print_signed_dec_int:
                 pusha
 
                 cmp     eax, 0      ;if eax > 0:
-                jge     realbegin   ;goto realbegin. else:
+                jge     .realbegin  ;goto realbegin. else:
                 mov     ebx, eax    ;print me a '-'...
                 mov     eax, 45     ;...
                 call    print_char_from_val
                 mov     eax, ebx
                 neg     eax
 
-  realbegin:    mov     ecx, 0      ;ecx will be our counter
+  .realbegin:   mov     ecx, 0      ;ecx will be our counter
                 mov     ebx, 10     ;keep dividing by 10
 
-    divloop:    cdq                 ;extend eax into edx.
+   .divloop:    cdq                 ;extend eax into edx.
                 div    ebx         ;signed division... quotient goes
                                     ;into eax, remainder goes into edx.
                 push    dword edx   ;push the decimal LSD (heh) onto the stack
                 add     ecx, 1      ;increment ecx
                 cmp     eax, 0
-                jne     divloop
+                jne     .divloop
 
-    prntloop:   pop     eax         ;pop the LSD into eax
+   .prntloop:   pop     eax         ;pop the LSD into eax
 
-         pos:   add     eax, 48     ;add 48 so we can ASCII
+                add     eax, 48     ;add 48 so we can ASCII
                 call    print_char_from_val
                 sub     ecx, 1      ;decrement ecx
                 cmp     ecx, 0      ;check if ecx = 0
-                jne     prntloop
+                jne     .prntloop
 
                 popa
 
@@ -120,37 +120,37 @@ print_signed_dec_int:
 
 print_unsigned_bin_int:
                 pusha
-                mov     ebx, 31
+                mov     ebx, 31    ;32 bits
 
-  binprntloop:  rol     eax, 1
-                jc      print_1
+  .binprntloop: rol     eax, 1
+                jc      .print_1
 
-   print_0:     push    eax
+  .print_0:     push    eax
                 mov     eax, 48
                 call    print_char_from_val
                 pop     eax
-                jmp     endprintbin
+                jmp     .endprintbin
 
-   print_1:     push    eax
+  .print_1:     push    eax
                 mov     eax, 49
                 call    print_char_from_val
                 pop     eax
-                jmp     endprintbin
+                jmp     .endprintbin
 
-   endprintbin: push    eax
+  .endprintbin: push    eax
                 mov     eax, ebx
                 mov     ecx, 8
-                cdq
-                div     ecx
-                cmp     edx,0
-                jne     noprintspace
+                cdq                     ;Clear out the division registers
+                div     ecx             ;
+                cmp     edx,0           ;Check if eax % ecx == 0. If so, skip
+                jne     .noprintspace   ;the jump and print a space.
                 mov     eax,32
                 call    print_char_from_val
 
-  noprintspace: pop     eax
+ .noprintspace: pop     eax
                 dec     ebx
                 cmp     ebx,0
-                jge     binprntloop
+                jge     .binprntloop
 
                 popa
 
@@ -164,11 +164,11 @@ dump_regs:
                 push    dword edx
 
                 mov     eax,reg_a
-                sub     eax,6
+                sub     eax,6           ;See first line under .regdump
                 mov     ecx,4
 
-    regdump:
-                add     eax,6
+   .regdump:
+                add     eax,6           ;Move to the next string: (E[A,B,C,D]X)
                 call    print_string
                 mov     ebx,eax
                 pop     eax
@@ -179,7 +179,7 @@ dump_regs:
 
                 dec     ecx
                 cmp     ecx,0
-                jg      regdump
+                jg      .regdump
 
                 popa
                 ret

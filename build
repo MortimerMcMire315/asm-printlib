@@ -1,5 +1,18 @@
-nasm -f elf32 main.asm
-nasm -f elf32 print_routines.asm
-nasm -f elf32 str_routines.asm
-gcc -m32 -march=i386 -o main main.o print_routines.o str_routines.o
+#!/bin/bash
+FILES='main.asm
+       print_routines.asm
+       str_routines.asm
+       mem.asm'
+
+SUCCESS=1
+
+for f in $FILES; do
+    nasm -f elf32 $f || SUCCESS=0
+    if [ $SUCCESS -eq 0 ]; then
+        echo "Compilation failure."
+        exit 1
+    fi
+done
+
+gcc -m32 -march=i386 -o main $(echo $FILES | sed -re 's/\.asm/.o/g')
 rm *.o
