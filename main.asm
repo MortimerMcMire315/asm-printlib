@@ -1,5 +1,8 @@
 segment .data
-    st:     db      "Hello World!",0
+    st:     db      'Hello World!',0
+    stt:    db      'Original string:',0
+    sttt:   db      'Copied into dynamic memory:',0
+    stttt:  db      'Reversed and copied:',0
 
 segment .bss
     buf:    resb    4096
@@ -20,13 +23,33 @@ segment .text
     extern strcopy
 
 main:
-        mov     eax, st
-        call    strcopy
+;        mov     eax, stt
+;        call    print_string
+;        mov     eax, st
+;        call    print_string
+;        call    print_nl
+;
+;        mov     eax, sttt
+;        call    print_string
+;
+;        mov     eax, st
+;        call    strcopy
+;        call    print_string
+;        call    print_nl
+;        push    eax
+;
+;        mov     eax, stttt
+;        call    print_string
+;
+;        pop     eax
+;        call    reversecopy
+;        call    print_string
+;        call    print_nl
+
+        mov     eax, stt
+        call    reversecopy
         call    print_string
         call    print_nl
-        ;call    reversecopy
-        ;call    print_string
-        ;call    print_nl
 
         mov     eax, 1
         mov     ebx, 0

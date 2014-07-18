@@ -16,11 +16,11 @@ strlen:
                 push    ebx
                 mov     ebx, 0
 
- .strlenloop:
+    .loooop:
                 add     ebx, 1
                 add     eax, 1
                 cmp     dword [eax], 0
-                jne     .strlenloop
+                jne     .loooop
 
                 mov     eax, ebx
 
@@ -53,14 +53,14 @@ lowercase:
                 add     edx,32                ;lowercase by adding 32
                 mov     ecx, edx              ;Move new lowercased value into ecx
 
-   .copy:
+    .copy:
                 mov     [eax],ecx             ;Copy the character into memory.
 
                 add     eax,1
                 add     ebx,1
                 jmp     .loop
 
-   .end:
+    .end:
                 mov     byte [eax],0         ;Null-terminate!
                 pop     eax                   ;And here's our address of the new string.
                 ret
@@ -91,14 +91,14 @@ capitalize:
                 sub     edx,32                ;capitalize by subtracting 32
                 mov     ecx, edx              ;Move new capitalized value into ecx
 
-   .copy:
+    .copy:
                 mov     [eax],ecx             ;Copy the character into memory.
 
                 add     eax,1
                 add     ebx,1
                 jmp     .loop
 
-   .end:
+    .end:
                 mov     byte [eax],0         ;Null-terminate!
                 pop     eax                   ;And here's our address of the new string.
                 ret
@@ -115,12 +115,12 @@ reversecopy:
                                             ;ecx will move backward through the new memory space.
             mov     byte [ecx], 0           ;First, null-terminate.
 
-    .l1:    
+    .l1:
             cmp     ecx, eax                ;If ecx is at the beginning of the new memory space, break.
               je      .end
             dec     ecx
 
-            mov     esi, ebx                
+            mov     esi, ebx
             mov     edi, ecx
             movsb                           ;Copy a single byte from ebx to ecx.
 
