@@ -17,12 +17,16 @@ segment .text
     extern lowercase
     extern dump_regs
     extern reversecopy
+    extern strcopy
 
 main:
         mov     eax, st
-        call    reversecopy
+        call    strcopy
         call    print_string
         call    print_nl
+        ;call    reversecopy
+        ;call    print_string
+        ;call    print_nl
 
         mov     eax, 1
         mov     ebx, 0

@@ -3,10 +3,12 @@ segment .text
     global capitalize
     global lowercase
     global reversecopy
+    global strcopy
     extern mallocwrap
     extern dump_regs
     extern print_signed_dec_int
     extern print_nl
+    extern print_string
 
 ;Given a string address in EAX
 ;Returns string length in EAX
@@ -105,36 +107,53 @@ capitalize:
 reversecopy:
             mov     ebx, eax                ;ebx contains the old string address.
             call    strlen
-            push    eax                     ;save the string length
+            mov     ecx, eax                ;ecx contains the string length.
             add     eax, 1                  ;add a byte for null termination
             call    mallocwrap              ;eax contains a new address to use.
-            pop     ecx                     ;ecx now contains the string length.
 
-            add     ecx, eax                ;ecx will move backward through the new memory space.
+            add     ecx, eax                ;ecx points to the end of the new memory space.
+                                            ;ecx will move backward through the new memory space.
             mov     byte [ecx], 0           ;First, null-terminate.
 
     .l1:    
-            ;call    dump_regs
-            ;call    print_nl
-            cmp     ecx, eax
-            je      .end
+            cmp     ecx, eax                ;If ecx is at the beginning of the new memory space, break.
+              je      .end
             dec     ecx
 
-            push    dword [ebx]
-            push    eax
-            mov     eax, [ebx]
-            call    print_signed_dec_int
-            call    print_nl
-            mov     eax, [ecx]
-            call    print_signed_dec_int
-            call    print_nl
-            pop     eax
-            pop     dword [ecx]
+            mov     esi, ebx                
+            mov     edi, ecx
+            movsb                           ;Copy a single byte from ebx to ecx.
 
-            call    print_nl
-            
+            inc     ebx                     ;Move ebx up a byte.
+            jmp     .l1                     ;loop back.
+
+    .end:
+            ret
+
+strcopy:
+            mov     ebx, eax                ;ebx gets the old address.
+            call    strlen
+            mov     ecx, eax                ;ecx gets string length.
+            add     eax, 1                  ;1byte for null termination.
+            call    mallocwrap              ;eax gets a new address to use.
+
+            push    eax
+
+            add     ecx, eax                ;ecx points to the end of the new memory space.
+
+    .l1:    cmp     eax, ecx                ;If eax gets to the end of the memory space, break.
+                je      .end
+
+            mov     esi, ebx
+            mov     edi, eax
+            movsb
+
+            inc     eax
             inc     ebx
+
             jmp     .l1
 
     .end:
+            mov     byte [eax], 0
+            pop     eax
             ret

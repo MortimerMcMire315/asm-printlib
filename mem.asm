@@ -6,6 +6,7 @@ segment .text
     global mallocwrap
     extern print_string
     extern malloc
+    extern dump_regs
 
 kill_me:
                 mov     eax, errorstr
@@ -17,11 +18,19 @@ kill_me:
 
 ;Given number of bytes to allocate
 mallocwrap:
+    push    dword ebx
+    push    dword ecx
+    push    dword edx
+
     push    dword eax   ;calling convention for malloc
     call    malloc      ;Allocate enough bytes to copy the string.
     test    eax, eax    ;sanity test
     jz      kill_me
     add     esp,4       ;Un-stack eax
+
+    pop     edx
+    pop     ecx
+    pop     ebx
     ;eax should now point to our new memory.
 
     ret
