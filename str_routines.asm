@@ -1,12 +1,16 @@
 segment .text
-    global str_len
+    global strlen
     global capitalize
     global lowercase
+    global reversecopy
     extern mallocwrap
+    extern dump_regs
+    extern print_signed_dec_int
+    extern print_nl
 
 ;Given a string address in EAX
 ;Returns string length in EAX
-str_len:
+strlen:
                 push    ebx
                 mov     ebx, 0
 
@@ -23,7 +27,7 @@ str_len:
 
 lowercase:
                 mov     ebx, eax    ; ebx = eax
-                call    str_len     ; eax = strlen(eax)
+                call    strlen     ; eax = strlen(eax)
 
                 add     eax,1       ;Add one byte to null-terminate
 
@@ -44,8 +48,8 @@ lowercase:
                     jg .copy
 
                 mov     edx,[ebx]             ;Move the current character into edx as a workspace.
-                add     edx,32                ;lowercase by subtracting 32
-                mov     ecx, edx              ;Move new capitalized value into ecx
+                add     edx,32                ;lowercase by adding 32
+                mov     ecx, edx              ;Move new lowercased value into ecx
 
    .copy:
                 mov     [eax],ecx             ;Copy the character into memory.
@@ -61,7 +65,7 @@ lowercase:
 
 capitalize:
                 mov     ebx, eax    ; ebx = eax
-                call    str_len     ; eax = strlen(eax)
+                call    strlen     ; eax = strlen(eax)
 
                 add     eax,1       ;Add one byte to null-terminate
 
@@ -96,3 +100,41 @@ capitalize:
                 mov     byte [eax],0         ;Null-terminate!
                 pop     eax                   ;And here's our address of the new string.
                 ret
+
+;Given a string address in EAX, return a pointer to a reversed version of the string
+reversecopy:
+            mov     ebx, eax                ;ebx contains the old string address.
+            call    strlen
+            push    eax                     ;save the string length
+            add     eax, 1                  ;add a byte for null termination
+            call    mallocwrap              ;eax contains a new address to use.
+            pop     ecx                     ;ecx now contains the string length.
+
+            add     ecx, eax                ;ecx will move backward through the new memory space.
+            mov     byte [ecx], 0           ;First, null-terminate.
+
+    .l1:    
+            ;call    dump_regs
+            ;call    print_nl
+            cmp     ecx, eax
+            je      .end
+            dec     ecx
+
+            push    dword [ebx]
+            push    eax
+            mov     eax, [ebx]
+            call    print_signed_dec_int
+            call    print_nl
+            mov     eax, [ecx]
+            call    print_signed_dec_int
+            call    print_nl
+            pop     eax
+            pop     dword [ecx]
+
+            call    print_nl
+            
+            inc     ebx
+            jmp     .l1
+
+    .end:
+            ret

@@ -16,6 +16,7 @@ segment .text
         global print_char_from_ptr
         global print_string
         global print_signed_dec_int
+        global print_unsigned_dec_int
         global print_unsigned_bin_int
         global dump_regs
         global str_len
@@ -110,8 +111,34 @@ print_signed_dec_int:
 
                 add     eax, 48     ;add 48 so we can ASCII
                 call    print_char_from_val
-                sub     ecx, 1      ;decrement ecx
+                dec     ecx         ;decrement ecx
                 cmp     ecx, 0      ;check if ecx = 0
+                jne     .prntloop
+
+                popa
+
+                ret
+
+print_unsigned_dec_int:
+                pusha
+
+                mov     ecx, 0
+                mov     ebx, 10
+
+    .divloop:   cdq
+                div     ebx
+
+                push    dword edx
+                add     ecx, 1
+                cmp     eax, 0
+                jne     .divloop
+
+    .prntloop:  pop     eax
+
+                add     eax, 48
+                call    print_char_from_val
+                dec     ecx
+                cmp     ecx, 0
                 jne     .prntloop
 
                 popa
@@ -158,10 +185,10 @@ print_unsigned_bin_int:
 
 dump_regs:
                 pusha
-                push    dword eax
-                push    dword ebx
-                push    dword ecx
                 push    dword edx
+                push    dword ecx
+                push    dword ebx
+                push    dword eax
 
                 mov     eax,reg_a
                 sub     eax,6           ;See first line under .regdump

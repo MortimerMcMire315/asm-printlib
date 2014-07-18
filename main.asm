@@ -8,16 +8,21 @@ segment .text
     global main
     extern print_string
     extern print_nl
-    extern str_len
+    extern strlen
     extern print_char_from_ptr
     extern print_signed_dec_int
+    extern print_unsigned_dec_int
     extern print_unsigned_bin_int
     extern capitalize
     extern lowercase
     extern dump_regs
+    extern reversecopy
 
 main:
-        call    cap_stdin
+        mov     eax, st
+        call    reversecopy
+        call    print_string
+        call    print_nl
 
         mov     eax, 1
         mov     ebx, 0
