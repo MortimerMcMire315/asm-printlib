@@ -19,7 +19,7 @@ strlen:
     .loooop:
                 add     ebx, 1
                 add     eax, 1
-                cmp     dword [eax], 0
+                cmp     byte [eax], 0
                 jne     .loooop
 
                 mov     eax, ebx
@@ -142,7 +142,7 @@ strcopy:
             add     ecx, eax                ;ecx points to the end of the new memory space.
 
     .l1:    cmp     eax, ecx                ;If eax gets to the end of the memory space, break.
-                je      .end
+              je      .end
 
             mov     esi, ebx
             mov     edi, eax

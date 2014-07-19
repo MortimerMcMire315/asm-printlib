@@ -5,6 +5,7 @@ segment .data
         reg_b:   db      "EBX: ",0
         reg_c:   db      "ECX: ",0
         reg_d:   db      "EDX: ",0
+        hexpre:  db      "0x",0
 
 segment .bss
         to_print:   resb 1
@@ -18,6 +19,7 @@ segment .text
         global print_signed_dec_int
         global print_unsigned_dec_int
         global print_unsigned_bin_int
+        global print_unsigned_hex_int
         global dump_regs
         global str_len
 
@@ -85,6 +87,7 @@ print_string:
 
                 ret                 ;return
 
+
 print_signed_dec_int:
                 pusha
 
@@ -145,6 +148,46 @@ print_unsigned_dec_int:
 
                 ret
 
+print_unsigned_hex_int:
+                push    eax
+                mov     eax, hexpre
+                call    print_string ;Print "0x" for convention's sake.
+                pop     eax
+
+                pusha
+                mov     ecx, 0
+                mov     ebx, 16
+
+    .divloop:   cdq
+                div     ebx
+
+                push    dword edx
+                add     ecx, 1
+                cmp     eax, 0
+                jne     .divloop
+
+    .prntloop:  pop     eax
+                
+                cmp     eax, 10
+                jl      .prntdec    ;If the remainder is under 10, print an ASCII number.
+
+                add     eax, 55     ;Otherwise, print a letter A-F.
+                call    print_char_from_val
+
+
+    .return:    dec     ecx
+                cmp     ecx, 0
+                jne     .prntloop
+                je      .end
+
+    .prntdec:   add     eax, 48
+                call    print_char_from_val
+                jmp     .return
+ 
+        .end:   popa
+
+                ret
+
 print_unsigned_bin_int:
                 pusha
                 mov     ebx, 31    ;32 bits
@@ -182,6 +225,8 @@ print_unsigned_bin_int:
                 popa
 
                 ret
+
+
 
 dump_regs:
                 pusha
