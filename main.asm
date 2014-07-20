@@ -7,23 +7,14 @@ segment .bss
 segment .text
     global main
     extern print_string
-    extern print_nl
-    extern strlen
     extern print_char_from_ptr
-    extern print_signed_dec_int
-    extern print_unsigned_dec_int
-    extern print_unsigned_bin_int
-    extern print_unsigned_hex_int
     extern capitalize
-    extern lowercase
     extern dump_regs
-    extern reversecopy
-    extern strcopy
+    extern get_stdin
+    extern repl
 
 main:
-        mov     eax, 1
-        mov     ebx, 0
-        int     0x80
+        call    repl
 
 cap_stdin:
 

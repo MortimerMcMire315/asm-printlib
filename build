@@ -2,7 +2,8 @@
 FILES='main.asm
        print_routines.asm
        str_routines.asm
-       mem.asm'
+       mem.asm
+       calc.asm'
 
 SUCCESS=1
 
