@@ -3,7 +3,7 @@ segment .data
     invalid_str:  db      'Invalid input!',0
     exit_str:     db      'exit',0
     valid:        db      '0123456789+=/- ',0
-    welcome:      incbin  'welcome.dat'
+    welcome:      incbin  'data/welcome.dat'
 
 segment .bss
     input_buffer:   resb    4096
@@ -12,6 +12,7 @@ segment .text
     global get_stdin
     global repl
     extern print_string
+    extern print_signed_dec_int
     extern dump_regs
     extern print_char_from_ptr
     extern print_nl
@@ -19,6 +20,7 @@ segment .text
 repl:
                 mov     eax, welcome
                 call    print_string
+                call    print_nl
 
     .l1:        call    draw_prompt
                 call    get_stdin
@@ -32,46 +34,50 @@ exit:
                 int     0x80
 
 check_valid:
-            mov     eax, input_buffer-1
+                mov     eax, [input_buffer]
+                and     eax, 0xff
+                jz      .exitnl
+                mov     eax, input_buffer-1
 
-    .l1:
-            mov     ebx, valid-1    ;Reset validity string
-            inc     eax             ;Move to the next character in input.
+    .l1:        mov     ebx, valid-1    ;Reset validity string
+                inc     eax             ;Move to the next character in input.
 
-        .l2:
-                mov     edi, eax   ;Prepare for single-byte compare
-                inc     ebx        ;Next character in the set of valid characters.
-                mov     esi, ebx   ;Prepare for single-byte compare
 
-                cmp     byte [esi], 0  ;If we've hit the end of valid characters,
-                je      .invalid       ;The input was invalid.
+        .l2:        mov     edi, eax   ;Prepare for single-byte compare
+                    inc     ebx        ;Next character in the set of valid characters.
+                    mov     esi, ebx   ;Prepare for single-byte compare
 
-                cmpsb              ;Compare single byte ESI/EDI
-                jne     .l2
+                    cmp     byte [esi], 0  ;If we've hit the end of valid characters,
+                    je      .invalid       ;The input was invalid.
 
-            cmp     byte [edi], 0xA
-            je      .valid
-            cmp     byte [edi], 0
-            je      .valid
-            jmp     .l1
+                    cmpsb              ;Compare single byte ESI/EDI
+                    jne     .l2
+
+                cmp     byte [edi], 0xA
+                je      .valid
+                cmp     byte [edi], 0
+                je      .valid
+                jmp     .l1
 
     .invalid:
-            mov     eax, invalid_str
-            call    print_string
-            call    print_nl
-            mov     eax, 0
-            ret
+                mov     eax, invalid_str
+                call    print_string
+                call    print_nl
+                mov     eax, 0
+                ret
 
     .valid:
-            mov     eax, 1
-            ret
+                mov     eax, 1
+                ret
+
+    .exitnl:    mov     eax, exit_str
+                call    print_string
+                call    print_nl
+                jmp     exit
 
 check_exit:
-            mov     eax, input_buffer
-            mov     ebx, exit_str
-            dec     eax
-            dec     ebx
-
+            mov     eax, input_buffer-1
+            mov     ebx, exit_str-1
     .l1:
             inc     eax
             inc     ebx

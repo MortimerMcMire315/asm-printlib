@@ -130,6 +130,7 @@ reversecopy:
     .end:
             ret
 
+;Will be given a string address and copy it to an arbitrary new memory location.
 strcopy:
             mov     ebx, eax                ;ebx gets the old address.
             call    strlen
@@ -157,3 +158,10 @@ strcopy:
             mov     byte [eax], 0
             pop     eax
             ret
+
+;Params:
+;EAX = address of string 1
+;EBX = address of string 2
+;
+;Return: Bool in EAX
+;strcmp:
