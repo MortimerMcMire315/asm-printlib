@@ -177,11 +177,33 @@ strcopy:
 ;    RETURNS:
 ;        EAX = 1 if the character is numerical.
 ;===============================================================================
-is_ascii_num:
+is_ascii_ptr:
                 mov     al, [eax]
                 cmp     al, 48
                 jl      .nope
                 cmp     al, 57
+                jg      .nope
+
+                mov     eax, 1
+                ret
+
+    .nope:      mov     eax, 0
+                ret
+
+;===============================================================================
+;    Determines whether the given pointer to a character is numerical. Preserves
+;    all other registers.
+;
+;    PARAMETERS:
+;        EAX = ASCII byte value of the character to check
+;        
+;    RETURNS:
+;        EAX = 1 if the character is numerical.
+;===============================================================================
+is_ascii_num:
+                cmp     eax, 48
+                jl      .nope
+                cmp     eax, 57
                 jg      .nope
 
                 mov     eax, 1

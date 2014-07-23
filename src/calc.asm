@@ -1,5 +1,6 @@
-%define NUM_MODE 0
-%define OPR_MODE 1
+%define PRE_INT 1
+%define PRE_OPR 2
+%define STACK_END 3
 
 segment .data
     prompt:         db      '> ',0
@@ -10,6 +11,8 @@ segment .data
 
 segment .bss
     input_buffer:   resb    4096
+    counter:        resd    1
+    endinputf:      resd    1
 
 segment .text
     global get_stdin
@@ -25,13 +28,6 @@ segment .text
 ;   Read-Eval-Print loop for the RPN calculator.
 ;===============================================================================
 REPL:
-                mov     eax, 45
-                mov     ebx, '9'
-                call    concat_ascii_num
-                call    print_signed_dec_int
-                call    print_nl
-                call    exit
-
                 mov     eax, welcome
                 call    print_string
                 call    print_nl
@@ -40,6 +36,8 @@ REPL:
                 call    get_stdin
                 call    check_exit
                 call    check_valid_chars
+                cmp     eax, 1
+                jne     .l1
                 call    interpret_rpn
                 jmp     .l1
 
@@ -75,20 +73,49 @@ concat_ascii_num:
 
 ;===============================================================================
 ;    RETURNS:
-;       The result of the calculation as a 4-byte integer in EAX.
+;       Nothing, but parses user input and stores the important data on the
+;       stack. Every dword on the stack is preceded by a "descriptor" - Parsed
+;       integers are preceded by PRE_INT and parsed operators are preceded by 
+;       PRE_OPR. So for the input "90 52 763 + -", our stack might look like:
+;   
+;                   ______
+;                   PRE_OPR
+;                   45
+;                   PRE_OPR
+;                   43
+;                   PRE_INT
+;                   763
+;                   PRE_INT
+;                   52
+;                   PRE_INT
+;                   90
+;                   STACK_END
+;                   ______
+;
+;TODO get rid of the counter and just use STACK_END
 ;===============================================================================
 interpret_rpn:
                     mov     ecx, input_buffer-1
                     mov     edx, 0              ;Numbers will be parsed byte-by-byte into EDX.
+                    push    STACK_END
+                    mov     byte [counter], 1
+                    mov     dword [endinputf], 0
                     
        .eat_val:    inc     ecx
                     mov     ebx, [ecx]
                     and     ebx, 0xFF
 
-                    cmp     ebx, 0
-                    je      .end
+                    cmp     ebx, 0xA
+                    je      .done
+                    cmp     ebx, 0x0
+                    je      .done
+                    jmp     .notdone
 
-                    cmp     ebx, 0x20
+          .done:    mov     dword [endinputf], 1       ;this will tell us not to loop back.
+                    mov     eax, [endinputf]
+                    jmp     .consume_space
+
+       .notdone:    cmp     ebx, 0x20
                     je      .consume_space
 
                     mov     eax, ebx
@@ -98,23 +125,50 @@ interpret_rpn:
 
                     ;otherwise, it is an operator. Just push and loop.
                     push    ebx
+                    push    dword PRE_OPR
+                    add     byte [counter], 2
                     jmp     .eat_val
-
+                    
+                    ;--------------------------
     .concat_num:    push    eax
                     mov     eax, edx
                     call    concat_ascii_num    ;concat_ascii_num(edx, ebx)
                     mov     edx, eax
                     pop     eax
                     jmp     .eat_val
-
-    .consume_space: cmp     edx, 0          ;If edx has an unpushed number, 
-                    je      .eat_val
+                    
+                    ;--------------------------
+    .consume_space: 
+                    cmp     edx, 0          ;If edx has an unpushed number, 
+                    je      .nopush
 
                     push    edx             ;push it and set edx=0.
+                    push    dword PRE_INT
+                    add     byte [counter], 2
                     mov     edx, 0
-                    jmp     .eat_val
 
-    .end:           
+                    ;Check endinputf as set earlier in .eat_val.
+       .nopush:     mov     eax, [endinputf]
+                    cmp     eax, 1
+                    je      .popplagid
+                    
+
+                    jmp     .eat_val
+                    
+                    ;----------------------------
+    ;When we hit this label, all numbers and operators should be 
+    ;properly stacked. Input errors will be caught at evaluation time.
+    .popplagid:     
+                    cmp     byte [counter], 0
+                    je      .end
+                    pop     eax
+                    call    print_signed_dec_int
+                    call    print_nl
+                    dec     byte [counter]
+                    jmp     .popplagid
+
+                    ;-------------------------
+    .end:
                     ret
 
 
