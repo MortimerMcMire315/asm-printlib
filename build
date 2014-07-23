@@ -1,11 +1,16 @@
 #!/bin/bash
-FILES=$(for i in $(find src | grep asm); do echo $i; done)
+if [ ! -d "obj/" ]; then
+    mkdir obj
+fi
+
+FILES=$(for i in $(find src | grep "\.asm$"); do echo $i; done)
 
 SUCCESS=1
 
 for f in $FILES; do
     FNAME=$(basename $f .asm)
-    nasm -l "${FNAME}.lst" -f elf32 -Idata -o "obj/${FNAME}.o" $f || SUCCESS=0
+    #nasm -l "${FNAME}.lst" -f elf32 -Idata -o "obj/${FNAME}.o" $f || SUCCESS=0
+    nasm -f elf32 -Idata -o "obj/${FNAME}.o" $f || SUCCESS=0
     if [ $SUCCESS -eq 0 ]; then
         echo "Compilation failure."
         exit 1

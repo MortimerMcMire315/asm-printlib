@@ -4,6 +4,7 @@ segment .text
     global lowercase
     global reversecopy
     global strcopy
+    global is_ascii_num
     extern mallocwrap
     extern dump_regs
     extern print_signed_dec_int
@@ -165,3 +166,26 @@ strcopy:
 ;
 ;Return: Bool in EAX
 ;strcmp:
+
+;===============================================================================
+;    Determines whether the given pointer to a character is numerical. Preserves
+;    all other registers.
+;
+;    PARAMETERS:
+;        EAX = Address of the character to check
+;        
+;    RETURNS:
+;        EAX = 1 if the character is numerical.
+;===============================================================================
+is_ascii_num:
+                mov     al, [eax]
+                cmp     al, 48
+                jl      .nope
+                cmp     al, 57
+                jg      .nope
+
+                mov     eax, 1
+                ret
+
+    .nope:      mov     eax, 0
+                ret

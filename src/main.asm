@@ -11,10 +11,10 @@ segment .text
     extern capitalize
     extern dump_regs
     extern get_stdin
-    extern repl
+    extern REPL
 
 main:
-        call    repl
+        call    REPL
 
 cap_stdin:
 
