@@ -1,18 +1,20 @@
-%define PRE_INT 1
-%define PRE_OPR 2
-%define STACK_END 3
-
 segment .data
     prompt:         db      '> ',0
     invalid_str:    db      'Invalid input!',0
     exit_str:       db      'exit',0
     valid:          db      '0123456789+=/- ',0
     welcome:        incbin  'data/welcome.dat'
+    PRE_INT:        equ     1
+    PRE_OPR:        equ     2
+    STACK_END:      equ     3
+    NUM_MODE:       equ     0
+    DESC_MODE:      equ     1
+
 
 segment .bss
     input_buffer:   resb    4096
-    counter:        resd    1
     endinputf:      resd    1
+    pushnum:        resd    1
 
 segment .text
     global get_stdin
@@ -23,6 +25,7 @@ segment .text
     extern print_char_from_ptr
     extern print_nl
     extern is_ascii_num
+    extern print_unsigned_hex_int
 
 ;===============================================================================
 ;   Read-Eval-Print loop for the RPN calculator.
@@ -38,6 +41,7 @@ REPL:
                 call    check_valid_chars
                 cmp     eax, 1
                 jne     .l1
+
                 call    interpret_rpn
                 jmp     .l1
 
@@ -98,8 +102,8 @@ interpret_rpn:
                     mov     ecx, input_buffer-1
                     mov     edx, 0              ;Numbers will be parsed byte-by-byte into EDX.
                     push    STACK_END
-                    mov     byte [counter], 1
                     mov     dword [endinputf], 0
+                    mov     dword [pushnum], 1
                     
        .eat_val:    inc     ecx
                     mov     ebx, [ecx]
@@ -126,11 +130,11 @@ interpret_rpn:
                     ;otherwise, it is an operator. Just push and loop.
                     push    ebx
                     push    dword PRE_OPR
-                    add     byte [counter], 2
                     jmp     .eat_val
                     
                     ;--------------------------
-    .concat_num:    push    eax
+    .concat_num:    mov     dword [pushnum], 1
+                    push    eax
                     mov     eax, edx
                     call    concat_ascii_num    ;concat_ascii_num(edx, ebx)
                     mov     edx, eax
@@ -139,33 +143,37 @@ interpret_rpn:
                     
                     ;--------------------------
     .consume_space: 
-                    cmp     edx, 0          ;If edx has an unpushed number, 
-                    je      .nopush
+                    cmp     dword [pushnum], 0          ;If we don't need to push a number,
+                    je      .nopush                    ;don't push a number.
 
                     push    edx             ;push it and set edx=0.
                     push    dword PRE_INT
-                    add     byte [counter], 2
                     mov     edx, 0
+                    mov     dword [pushnum], 0
 
                     ;Check endinputf as set earlier in .eat_val.
        .nopush:     mov     eax, [endinputf]
                     cmp     eax, 1
                     je      .popplagid
                     
-
                     jmp     .eat_val
                     
                     ;----------------------------
     ;When we hit this label, all numbers and operators should be 
     ;properly stacked. Input errors will be caught at evaluation time.
     .popplagid:     
-                    cmp     byte [counter], 0
+                    mov     ecx, DESC_MODE      ;ECX will tell us whether we expect to 
+                                                ;pop a number or descriptor.
+          .poploop: pop     eax
+                    cmp     ecx, DESC_MODE
+                    jne     .poplbl
+                    cmp     eax, STACK_END
                     je      .end
-                    pop     eax
-                    call    print_signed_dec_int
+
+          .poplbl   call    print_signed_dec_int
                     call    print_nl
-                    dec     byte [counter]
-                    jmp     .popplagid
+                    xor     ecx,1               ;Alternate ECX between DESC_MODE and NUM_MODE
+                    jmp     .poploop
 
                     ;-------------------------
     .end:
@@ -179,6 +187,31 @@ exit:
                 mov     eax, 1
                 mov     ebx, 0
                 int     0x80
+
+;===============================================================================
+;   Reads the input buffer and finds the newline or null-terminator (whichever 
+;   comes first), and returns the address of the byte preceding it (the last byte
+;   in the input that we care about). 
+;
+;   Returns:
+;        EAX = address of last character
+;===============================================================================
+find_input_end:
+                mov     eax, input_buffer-1
+        
+        .loop:  inc     eax
+                cmp     byte [eax], 0xA     ;al = newline?
+                je      .end
+
+                cmp     byte [eax], 0
+                je      .end
+
+                jmp     .loop
+
+        .end:   dec     eax
+
+                ret
+                
 
 ;===============================================================================
 ;    Params:
