@@ -2,11 +2,11 @@ segment .data
     prompt:         db      '> ',0
     invalid_str:    db      'Invalid input!',0
     exit_str:       db      'exit',0
-    valid:          db      '0123456789+=/- ',0
+    valid:          db      '0123456789+*/- ',0
     welcome:        incbin  'data/welcome.dat'
     PRE_INT:        equ     1
     PRE_OPR:        equ     2
-    STACK_END:      equ     3
+    STACK_END:      equ     0xFFFFFFFF
     NUM_MODE:       equ     0
     DESC_MODE:      equ     1
 
@@ -42,7 +42,7 @@ REPL:
                 cmp     eax, 1
                 jne     .l1
 
-                call    interpret_rpn
+                call    evaluate_input
                 jmp     .l1
 
 ;===============================================================================
@@ -76,6 +76,56 @@ concat_ascii_num:
                     ret
 
 ;===============================================================================
+;    PARAMETERS:
+;        EAX = first operand
+;        EBX = operator
+;        EDX = second operand
+;        
+;    RETURNS:
+;        Result in EAX.
+;
+;    PRESERVES: ECX
+;===============================================================================
+perform_operation:
+                    ;We have to be very careful not to pop past the end of the stack,
+                    ;in case of bad user input.
+                    cmp     ebx, 43
+                    je      .add
+                    cmp     ebx, 45
+                    je      .subtract
+                    cmp     ebx, 42
+                    je      .multiply
+                    cmp     ebx, 47
+                    je      .divide
+
+                    ;If the operator is not recognized, it will be caught here.
+
+       .bad_input:  mov     eax, invalid_str
+                    call    print_string
+                    call    print_nl
+                    jmp     exit
+
+
+       .add:        add     eax, edx
+                    ret
+
+       .subtract:   sub     edx, eax
+                    mov     eax, edx
+                    ret
+
+       .multiply:   mul     edx
+                    ret
+
+       .divide:     
+                    push    ecx
+                    mov     ecx, eax
+                    mov     eax, edx
+                    cdq
+                    idiv    ecx
+                    pop     ecx
+                    ret
+
+;===============================================================================
 ;    RETURNS:
 ;       Nothing, but parses user input and stores the important data on the
 ;       stack. Every dword on the stack is preceded by a "descriptor" - Parsed
@@ -95,31 +145,23 @@ concat_ascii_num:
 ;                   90
 ;                   STACK_END
 ;                   ______
-;
-;TODO get rid of the counter and just use STACK_END
 ;===============================================================================
-interpret_rpn:
+evaluate_input:
                     mov     ecx, input_buffer-1
                     mov     edx, 0              ;Numbers will be parsed byte-by-byte into EDX.
-                    push    STACK_END
-                    mov     dword [endinputf], 0
                     mov     dword [pushnum], 1
+                    push    STACK_END
                     
        .eat_val:    inc     ecx
                     mov     ebx, [ecx]
                     and     ebx, 0xFF
 
                     cmp     ebx, 0xA
-                    je      .done
+                    je      .end
                     cmp     ebx, 0x0
-                    je      .done
-                    jmp     .notdone
+                    je      .end
 
-          .done:    mov     dword [endinputf], 1       ;this will tell us not to loop back.
-                    mov     eax, [endinputf]
-                    jmp     .consume_space
-
-       .notdone:    cmp     ebx, 0x20
+                    cmp     ebx, 0x20
                     je      .consume_space
 
                     mov     eax, ebx
@@ -128,8 +170,16 @@ interpret_rpn:
                     je      .concat_num
 
                     ;otherwise, it is an operator. Just push and loop.
-                    push    ebx
-                    push    dword PRE_OPR
+                    pop     eax
+                    cmp     eax, STACK_END
+                    je      perform_operation.bad_input
+                    pop     edx
+                    cmp     edx, STACK_END
+                    je      perform_operation.bad_input
+
+                    call    perform_operation
+                    mov     edx, 0          ;EDX continues to signify whether we have an unpushed number.
+                    push    eax             ;Push the result of the operation.
                     jmp     .eat_val
                     
                     ;--------------------------
@@ -144,39 +194,28 @@ interpret_rpn:
                     ;--------------------------
     .consume_space: 
                     cmp     dword [pushnum], 0          ;If we don't need to push a number,
-                    je      .nopush                    ;don't push a number.
+                    je      .eat_val                    ;don't push a number.
 
-                    push    edx             ;push it and set edx=0.
-                    push    dword PRE_INT
+                    push    edx                         ;push it and set edx=0.
                     mov     edx, 0
-                    mov     dword [pushnum], 0
-
-                    ;Check endinputf as set earlier in .eat_val.
-       .nopush:     mov     eax, [endinputf]
-                    cmp     eax, 1
-                    je      .popplagid
-                    
+                    mov     dword [pushnum], 0          ;We have pushed the number that was being built.
                     jmp     .eat_val
-                    
-                    ;----------------------------
-    ;When we hit this label, all numbers and operators should be 
-    ;properly stacked. Input errors will be caught at evaluation time.
-    .popplagid:     
-                    mov     ecx, DESC_MODE      ;ECX will tell us whether we expect to 
-                                                ;pop a number or descriptor.
-          .poploop: pop     eax
-                    cmp     ecx, DESC_MODE
-                    jne     .poplbl
-                    cmp     eax, STACK_END
-                    je      .end
 
-          .poplbl   call    print_signed_dec_int
-                    call    print_nl
-                    xor     ecx,1               ;Alternate ECX between DESC_MODE and NUM_MODE
-                    jmp     .poploop
-
-                    ;-------------------------
     .end:
+                    cmp     edx, 0
+                    jne     perform_operation.bad_input
+
+                    pop     eax
+                    mov     ebx, eax
+
+                    pop     eax
+                    cmp     eax, STACK_END
+                    jne     perform_operation.bad_input
+
+                    mov     eax, ebx
+                    call    print_signed_dec_int
+                    call    print_nl
+
                     ret
 
 
