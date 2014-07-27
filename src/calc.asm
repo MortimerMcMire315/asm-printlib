@@ -126,25 +126,8 @@ perform_operation:
                     ret
 
 ;===============================================================================
-;    RETURNS:
-;       Nothing, but parses user input and stores the important data on the
-;       stack. Every dword on the stack is preceded by a "descriptor" - Parsed
-;       integers are preceded by PRE_INT and parsed operators are preceded by 
-;       PRE_OPR. So for the input "90 52 763 + -", our stack might look like:
-;   
-;                   ______
-;                   PRE_OPR
-;                   45
-;                   PRE_OPR
-;                   43
-;                   PRE_INT
-;                   763
-;                   PRE_INT
-;                   52
-;                   PRE_INT
-;                   90
-;                   STACK_END
-;                   ______
+;       Parses user input and prints the result of the RPN calculation. Errors
+;       in input are handled on the fly.
 ;===============================================================================
 evaluate_input:
                     mov     ecx, input_buffer-1
