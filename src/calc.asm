@@ -2,7 +2,7 @@ segment .data
     prompt:         db      '> ',0
     invalid_str:    db      'Invalid input!',0
     exit_str:       db      'exit',0
-    valid:          db      '0123456789+*/- ',0
+    valid:          db      '0123456789+*/-% ',0
     welcome:        incbin  'data/welcome.dat'
     PRE_INT:        equ     1
     PRE_OPR:        equ     2
@@ -97,6 +97,8 @@ perform_operation:
                     je      .multiply
                     cmp     ebx, 47
                     je      .divide
+                    cmp     ebx, 37
+                    je      .mod
 
                     ;If the operator is not recognized, it will be caught here.
 
@@ -116,14 +118,23 @@ perform_operation:
        .multiply:   mul     edx
                     ret
 
-       .divide:     
-                    push    ecx
+       .divide:     push    ecx
                     mov     ecx, eax
                     mov     eax, edx
                     cdq
                     idiv    ecx
                     pop     ecx
                     ret
+
+        .mod:       push    ecx
+                    mov     ecx, eax
+                    mov     eax, edx
+                    cdq
+                    idiv    ecx
+                    pop     ecx
+                    mov     eax, edx
+                    ret
+
 
 ;===============================================================================
 ;       Parses user input and prints the result of the RPN calculation. Errors
@@ -155,10 +166,10 @@ evaluate_input:
                     ;otherwise, it is an operator. Just push and loop.
                     pop     eax
                     cmp     eax, STACK_END
-                    je      perform_operation.bad_input
+                    je      .invalid
                     pop     edx
                     cmp     edx, STACK_END
-                    je      perform_operation.bad_input
+                    je      .invalid
 
                     call    perform_operation
                     mov     edx, 0          ;EDX continues to signify whether we have an unpushed number.
@@ -186,19 +197,29 @@ evaluate_input:
 
     .end:
                     cmp     edx, 0
-                    jne     perform_operation.bad_input
+                    jne     .clean_stack
 
                     pop     eax
                     mov     ebx, eax
 
                     pop     eax
                     cmp     eax, STACK_END
-                    jne     perform_operation.bad_input
+                    jne     .clean_stack
 
                     mov     eax, ebx
                     call    print_signed_dec_int
                     call    print_nl
 
+                    ret
+
+    .clean_stack:   pop     eax
+                    cmp     eax, STACK_END
+                    je      .invalid
+                    jmp     .clean_stack
+
+        .invalid:   mov     eax, invalid_str
+                    call    print_string
+                    call    print_nl
                     ret
 
 
